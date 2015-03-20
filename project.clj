@@ -13,9 +13,14 @@
                  [ring/ring-core            "1.3.1"]
                  [ring/ring-jetty-adapter   "1.3.1"]
                  [ring/ring-devel           "1.3.1"]
+                 [org.slf4j/slf4j-log4j12 "1.7.1"]
+                 [ring-server "0.3.1"]
                  [log4j/log4j               "1.2.17"
                   :exclusions [javax.mail/mail
                                javx.jms/jms
                                com.sun.jdmk/jmxtools
                                com.sun.jmx/jmxri]]]
+  :ring {:handler riemann-grid.core/api-handler
+         :init riemann-grid.core/init}
+  :plugins [[lein-ring "0.8.10"]]
   :main riemann-grid.core)

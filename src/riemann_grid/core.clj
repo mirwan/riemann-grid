@@ -11,7 +11,12 @@
             [ring.util.response         :refer [response status content-type
                                                 charset]]
             [ring.adapter.jetty         :refer [run-jetty]]
-            [riemann-grid.views         :as views])
+            [riemann-grid.views         :as views]
+            [clojure.java.io :as io]
+            [clojure.tools.logging :refer [info warn error]])
+  (:import
+    (java.io   Reader)
+    (java.util Properties))
   (:gen-class))
 
 (def riemann-client (atom nil))
@@ -91,3 +96,26 @@
                  (-> api-handler (wrap-reload))
                  api-handler)
                {:address (:listen options) :port (:listen-port options)})))
+
+(def ^{:doc "Path to the Properties file (in filesystem)"
+       :dynamic true}
+      *properties-file* "riemann-grid.properties")
+
+(defn load-properties
+  "Load properties-file `file` (or *properties-file* if not specified) from
+  filesystem. Properties are returned as a map of property string names to
+  string values."
+  ([file] {:post [(and (map? %)
+                    (every? keyword? (keys %)))]}
+    (let [reader (io/reader file)
+          props  (Properties.)]
+      (.load ^Properties props ^Reader reader)
+      (into {} (for [[k v] props] [(keyword k) (read-string v)]))))
+  ([] {:pre [(string? *properties-file*)]}
+    (load-properties *properties-file*)))
+
+(defn init []
+  (let [props (merge {:riemann-port 5555 :riemann-host "127.0.0.1"} (load-properties))]
+    (reset! riemann-client (tcp-client :host (:riemann-host props)
+                                       :port (:riemann-port props)))))
+        
